@@ -1,0 +1,6 @@
+# python
+*.p[c]
+.DS_Store[*]
+
+/venv
+.idea/
