@@ -7,5 +7,5 @@ import os
 
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-execute(["scrapy", "crawl", "jobbole"])
+execute(["scrapy", "crawl", "zhihu"]) # jobbole zhihu
 # after go into spider project directory,ready to debug this main.py document.
