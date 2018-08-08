@@ -68,17 +68,14 @@ class MysqlTwistedPipeline(object):
 
     def process_item(self, item, spider):
         query = self.dbpool.runInteraction(self.do_insert, item)
-        query.addErrback(self.handle_error)
+        query.addErrback(self.handle_error, item, spider)
 
-    def handle_error(self, failure):
+    def handle_error(self, failure, item, spider):
         print(failure)
 
     def do_insert(self, cursor, item):
-        insert_sql = """
-                    insert into jobbole_article(title,url,create_date,fav_nums) 
-                    values (%s,%s,%s,%s)
-                """
-        cursor.execute(insert_sql, (item["title"], item["url"], item["create_date"], item["fav_nums"]))
+        insert_sql, params = item.get_insert_sql()
+        cursor.execute(insert_sql, params)
 
 
 class JsonExporterPipeline(object):

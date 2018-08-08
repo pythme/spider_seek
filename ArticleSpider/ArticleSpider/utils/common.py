@@ -1,7 +1,7 @@
 # coding=utf-8
 __author__ = 'pythme'
 
-import hashlib
+import hashlib, re
 
 
 def get_md5(url):
@@ -10,6 +10,15 @@ def get_md5(url):
     m = hashlib.md5()
     m.update(url)
     return m.hexdigest()
+
+
+def extract_num(value):
+    match_re = re.match(r".*?(\d+).*", value)
+    if match_re:
+        nums = int(match_re.group(1))
+    else:
+        nums = 0
+    return nums
 
 
 if __name__ == "__main__":

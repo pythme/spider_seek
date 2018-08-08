@@ -1,6 +1,7 @@
 # # -*- coding: utf-8 -*-
 import scrapy
-import re, time, os, pickle, json, datetime
+import re, time, os, pickle, json, datetime, random
+from ArticleSpider.settings import user_agent_list
 from scrapy.loader import ItemLoader
 from ArticleSpider.items import ZhihuAnswerItem, ZhihuQuestionItem
 
@@ -20,9 +21,7 @@ class ZhihuSpider(scrapy.Spider):
     headers = {
         "HOST": "www.zhihu.com",
         "Referer": "https://www.zhizhu.com",
-        # 'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"
-
+        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36",
     }
 
     custom_settings = {
@@ -30,15 +29,22 @@ class ZhihuSpider(scrapy.Spider):
     }
 
     def parse(self, response):
-        all_urls_incomplete = response.css("a::attr(href").extract()
-        all_urls_others = [parse.urljoin(response.url, url) for url in all_urls_incomplete]
-        all_urls = filter(lambda x: True if x.startswith("https") else False, all_urls_others)
+        # all_urls_incomplete = response.css("a::attr(href)").extract()
+        all_urls_incomplete = response.xpath('//div[@itemprop="zhihu:question"]/a/@href').extract()
+        all_urls_complete = [parse.urljoin(response.url, url) for url in all_urls_incomplete]
+        all_urls = filter(lambda x: True if x.startswith("https") else False, all_urls_complete)
         for url in all_urls:
-            match_obj = re.match("(.*zhihu.com/question/(\d+)(/|$)).*", url)
+            pattern = re.compile("(.*zhihu.com/question/(\d+)(/|$)).*")
+            match_obj = re.match(pattern, url)
             if match_obj:
                 request_url = match_obj.group(1)
+                # random_index = random.randint(0, len(user_agent_list) - 1)
+                # user_agent = user_agent_list[random_index]
+                # self.headers["User-Agent"] = user_agent
                 yield scrapy.Request(request_url, headers=self.headers, callback=self.parse_question)
+                # break debug
             else:
+                # pass
                 yield scrapy.Request(url, headers=self.headers, callback=self.parse)
 
     def parse_question(self, response):
@@ -54,10 +60,9 @@ class ZhihuSpider(scrapy.Spider):
             item_loader.add_value("zhihu_id", question_id)
             item_loader.add_xpath("answer_num", '//div/h4[@class="List-headerText"]/span/text()')
             item_loader.add_xpath("comments_num", '//div[@class="QuestionHeaderActions"]/div/button/text()')
-            item_loader.add_xpath("watch_user_num",
-                                  '//div[contains(@class,"NumberBoard QuestionFollowStatus-counts")]/div[1]/div/strong/text()')
-            item_loader.add_xpath("click_num",
-                                  '//div[contains(@class,"NumberBoard QuestionFollowStatus-counts")]/div[2]/div/strong/text()')
+            # item_loader.add_xpath("watch_user_num",'//div[@class="QuestionFollowStatus"]/div/button/div/strong/text()')
+            # item_loader.add_xpath("click_num",'//div/div[@class="NumberBoard-item"]/div/strong/text()')
+            item_loader.add_xpath("watch_user_num", '//div/strong[@class="NumberBoard-itemValue"]/text()')
             item_loader.add_xpath("topics", '//div[@class="QuestionHeader-topics"]/div/span/a/div/text()')
 
             question_item = item_loader.load_item()
@@ -86,10 +91,22 @@ class ZhihuSpider(scrapy.Spider):
                              callback=self.parse_answer)
         yield question_item
 
+        # all_urls_incomplete = response.xpath('//div[@itemprop="zhihu:question"]/a/@href').extract()
+        # all_urls_complete = [parse.urljoin(response.url, url) for url in all_urls_incomplete]
+        # all_urls = filter(lambda x: True if x.startswith("https") else False, all_urls_complete)
+        # for url in all_urls:
+        #     pattern = re.compile("(.*zhihu.com/question/(\d+)(/|$)).*")
+        #     match_obj = re.match(pattern,url)
+        #     if match_obj:
+        #         request_url = match_obj.group(1)
+        #         yield scrapy.Request(request_url, headers=self.headers, callback=self.parse_question)
+        #     else:
+        #         # pass
+        #         yield scrapy.Request(url, headers=self.headers, callback=self.parse)
+
     def parse_answer(self, reponse):
         ans_json = json.loads(reponse.text)
         is_end = ans_json["paging"]["is_end"]
-        total_answer = ans_json["paging"]["totals"]
         next_url = ans_json["paging"]["next"]
 
         for answer in ans_json["data"]:
@@ -99,7 +116,7 @@ class ZhihuSpider(scrapy.Spider):
             answer_item["question_id"] = answer["question"]["id"]
             answer_item["author_id"] = answer["author"]["id"] if "id" in answer["author"] else None
             answer_item["content"] = answer["content"] if "content" in answer else None
-            answer_item["parise_num"] = answer["voteup_count"]
+            answer_item["praise_num"] = answer["voteup_count"]
             answer_item["comments_num"] = answer["comment_count"]
             answer_item["create_time"] = answer["created_time"]
             answer_item["update_time"] = answer["updated_time"]
@@ -116,26 +133,26 @@ class ZhihuSpider(scrapy.Spider):
         # browser = webdriver.Firefox()
 
         browser.get("https://www.zhihu.com/signin")
-        browser.find_element_by_css_selector(".SignFlow-accountInput.Input-wrapper input").send_keys("1760215XXXX")
-        browser.find_element_by_css_selector(".SignFlow-password input").send_keys("XXXX")
-        time.sleep(5)
+        browser.find_element_by_css_selector(".SignFlow-accountInput.Input-wrapper input").send_keys("")
+        browser.find_element_by_css_selector(".SignFlow-password input").send_keys("")
+        time.sleep(2)
         # browser.find_element_by_css_selector(".Button.SignFlow-submitButton").click()
         browser.find_element_by_xpath('//button[contains(@class,"Button SignFlow-submitButton")]').click()
         time.sleep(5)
         Cookies = browser.get_cookies()
         cookie_dict = {}
-        os.chdir(os.path.dirname(__file__))
-        os.chdir("../../")
-        basedir = os.getcwd()
+        os.chdir(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+        # os.chdir("../")
+        spider_dir = os.getcwd()
 
         try:
-            if os.path.exists(basedir + "/Zhihu_Cookies/"):
-                return
+            # os.path.exists(spider_dir + "/zhihu_cookies/")
+            os.mkdir("zhihu_cookies")
         except:
-            os.mkdir("Zhihu_Cookies")
+            os.chdir("zhihu_cookies")
 
         for cookie in Cookies:
-            cookies_dir = basedir + "/Zhihu_Cookies/"
+            cookies_dir = spider_dir + "/zhihu_cookies/"
             f = open(cookies_dir + cookie['name'] + '.zhihu', 'wb')
             pickle.dump(cookie, f)
             f.close()
