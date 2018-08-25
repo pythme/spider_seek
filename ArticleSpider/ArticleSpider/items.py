@@ -4,7 +4,7 @@
 #
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/items.html
-
+import redis
 import scrapy
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import MapCompose, TakeFirst, Join
@@ -12,7 +12,12 @@ from datetime import datetime
 from ArticleSpider.utils.common import extract_num
 from ArticleSpider.settings import SQL_DATETIME_FORMAT, SQL_DATE_FORMAT
 from w3lib.html import remove_tags
+from ArticleSpider.models.es_types import ArticleType
 
+from elasticsearch_dsl.connections import connections
+es = connections.create_connection(ArticleType._doc_type.using)
+
+redis_cli = redis.StrictRedis()
 
 class ArticlespiderItem(scrapy.Item):
     # define the fields for your item here like:
@@ -46,6 +51,22 @@ def return_value(value):
 
 class ArticleItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
+
+def gen_suggests(index, info_tuple):
+    used_words = set()
+    suggests = []
+    for text, weight in info_tuple:
+        if text:
+            words = es.indices.analyze(index=index, analyzer="ik_max_word", params={'filter':["lowercase"]}, body=text)
+            anylyzed_words = set([r["token"] for r in words["tokens"] if len(r["token"])>1])
+            new_words = anylyzed_words - used_words
+        else:
+            new_words = set()
+
+        if new_words:
+            suggests.append({"input":list(new_words), "weight":weight})
+
+    return suggests
 
 
 ######## Jobbole.com
@@ -85,8 +106,30 @@ class JobBoleArticleItem(scrapy.Item):
 
         return insert_sql, params
 
+    def save_to_es(self):
+        article = ArticleType()
+        article.title = self['title']
+        article.create_date = self['create_date']
+        article.content = remove_tags(self['content'])
+        article.front_image_url = self["front_image_url"]
+        if "front_image_path" in self:
+            article.front_image_path = self["front_image_path"]
+        article.praise_nums = self["praise_nums"]
+        article.fav_nums = self["fav_nums"]
+        article.comment_nums = self["comment_nums"]
+        article.url = self["url"]
+        article.tags = self["tags"]
+        article.meta.id = self["url_object_id"]
 
-######## zhihu.com
+        article.suggest = gen_suggests(ArticleType._doc_type.index, ((article.title, 10), (article.tags, 7)))
+
+        article.save()
+
+        redis_cli.incr("jobbole_count")
+
+        return
+
+    ######## zhihu.com
 class ZhihuQuestionItem(scrapy.Item):
     zhihu_id = scrapy.Field()
     topics = scrapy.Field()
@@ -129,6 +172,7 @@ class ZhihuQuestionItem(scrapy.Item):
                   watch_user_num, click_num, crawl_time)
 
         return insert_sql, params
+
 
 
 class ZhihuAnswerItem(scrapy.Item):

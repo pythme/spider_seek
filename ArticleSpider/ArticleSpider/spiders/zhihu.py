@@ -1,7 +1,7 @@
 # # -*- coding: utf-8 -*-
 import scrapy
 import re, time, os, pickle, json, datetime, random
-from ArticleSpider.settings import user_agent_list
+# from ArticleSpider.settings import user_agent_list
 from scrapy.loader import ItemLoader
 from ArticleSpider.items import ZhihuAnswerItem, ZhihuQuestionItem
 

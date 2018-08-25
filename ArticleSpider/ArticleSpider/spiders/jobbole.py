@@ -6,8 +6,9 @@ from scrapy.http import Request
 from urllib import parse
 from ArticleSpider.items import JobBoleArticleItem, ArticleItemLoader
 from ArticleSpider.utils.common import get_md5
-
-
+from selenium import webdriver
+from scrapy.xlib.pydispatch import dispatcher
+from scrapy import signals
 # from scrapy.loader import ItemLoader
 
 
@@ -16,9 +17,20 @@ class JobboleSpider(scrapy.Spider):
     allowed_domains = ['blog.jobbole.com']
     start_urls = ['http://blog.jobbole.com/all-posts/']
 
+    # def __init__(self):
+    #     self.browser = webdriver.Chrome()
+    #     super(JobboleSpider, self).__init__()
+    #     dispatcher.connect(self.spider_close,signals.spider_closed)
+    #
+    # def spider_close(self,spider):
+    #     print("spider closed")
+    #     self.browser.quit()
+
+
     def parse(self, response):
         # post_urls = response.xpath('//div[@id="archive"]/div[contains(@class,"floated-thumb")]/div[@class="post-thumb"]/a/@href').extract()
         # post_urls = response.css("#archive .floated-thumb .post-thumb a::attr(href)").extract()
+
         post_nodes = response.css("#archive .floated-thumb .post-thumb a")
         for post_node in post_nodes:
             image_url = post_node.css("img::attr(src)").extract_first("")

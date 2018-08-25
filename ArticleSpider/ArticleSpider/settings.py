@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, sys
+import os
 
 # Scrapy settings for ArticleSpider project
 #
@@ -15,27 +15,26 @@ BOT_NAME = 'ArticleSpider'
 
 SPIDER_MODULES = ['ArticleSpider.spiders']
 NEWSPIDER_MODULE = 'ArticleSpider.spiders'
-DOWNLOAD_DELAY = 0.25
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'ArticleSpider (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 REDIRECT_ENABLED = False
-HTTPERROR_ALLOWED_CODES = [302]
+# HTTPERROR_ALLOWED_CODES = [302]
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 # CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 10
+# DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-COOKIES_ENABLED = True
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 # TELNETCONSOLE_ENABLED = False
@@ -54,13 +53,14 @@ COOKIES_ENABLED = True
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
-    # 'ArticleSpider.middlewares.ArticlespiderDownloaderMiddleware': 543,
-    'ArticleSpider.middlewares.RandomUserAgentMiddlware': 543,
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-}
+# DOWNLOADER_MIDDLEWARES = {
+#     # 'ArticleSpider.middlewares.ArticlespiderDownloaderMiddleware': 543,
+#     'ArticleSpider.middlewares.JSPageMiddleware': 1,
+#     'ArticleSpider.middlewares.RandomUserAgentMiddlware': 543,
+#     # 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+# }
 
-USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36",
+# USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36",
 
 RANDOM_UA_TYPE = 'random'
 # Enable or disable extensions
@@ -81,6 +81,7 @@ ITEM_PIPELINES = {
 
     # 'ArticleSpider.pipelines.MysqlPipeline': 1,
     'ArticleSpider.pipelines.MysqlTwistedPipeline': 1,
+    'ArticleSpider.pipelines.ElasticsearchPipeline': 1,
 
 }
 
