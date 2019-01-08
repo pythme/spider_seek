@@ -9,8 +9,8 @@ browser = webdriver.Chrome()
 
 browser.get("https://weibo.com/")
 time.sleep(2)
-browser.find_element_by_xpath('//div[@class="input_wrap"]/input[@name="username"]').send_keys('17602150801')
-browser.find_element_by_xpath('//div[@class="input_wrap"]/input[@name="password"]').send_keys('Leslie@2314')
+browser.find_element_by_xpath('//div[@class="input_wrap"]/input[@name="username"]').send_keys('*')
+browser.find_element_by_xpath('//div[@class="input_wrap"]/input[@name="password"]').send_keys('*')
 browser.find_element_by_xpath('//div[contains(@class,"login_btn")]/a/span').click()
 
 # t_selector = Selector(text=browser.page_source)
